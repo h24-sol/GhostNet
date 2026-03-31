@@ -3,152 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOSTNET // WEB4</title>
+    <title>GHOSTNET // MASTER v2</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
     <style>
-        :root {
-            --neon-blue: #00f3ff;
-            --neon-purple: #bc13fe;
-            --dark-bg: #0a0a0c;
-            --glass: rgba(255, 255, 255, 0.05);
-        }
-
-        body {
-            background-color: var(--dark-bg);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        /* Web4 Glassmorphism UI */
-        .container {
-            width: 90%;
-            max-width: 500px;
-            margin-top: 20px;
-        }
-
-        header {
-            text-align: center;
-            padding: 20px;
-            border-bottom: 1px solid var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            width: 100%;
-        }
-
-        .post-card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            margin: 15px 0;
-            border-radius: 12px;
-            border-left: 4px solid var(--neon-purple);
-            animation: fadeIn 0.5s ease;
-        }
-
-        input, textarea {
-            width: 100%;
-            background: #1a1a1e;
-            border: 1px solid #333;
-            color: white;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-        button:hover { opacity: 0.8; transform: scale(0.98); }
-
-        .user-id { font-size: 10px; color: var(--neon-blue); opacity: 0.7; }
+        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #0a0a0c; --glass: rgba(255,255,255,0.05); }
+        body { background: var(--dark); color: white; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
+        .nav { width: 100%; padding: 15px; border-bottom: 1px solid var(--neon); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); position: sticky; top: 0; z-index: 100; }
+        .node-count { color: var(--neon); font-size: 0.8rem; font-weight: bold; text-shadow: 0 0 5px var(--neon); }
+        
+        .auth-box { background: var(--glass); padding: 20px; border-radius: 15px; margin-top: 20px; width: 90%; max-width: 400px; border: 1px solid var(--ghost); }
+        .hidden { display: none; }
+        
+        .container { width: 95%; max-width: 600px; padding: 20px 0; }
+        .post-card { background: var(--glass); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; }
+        .post-card:hover { border-color: var(--neon); }
+        
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(45deg, var(--neon), var(--ghost)); display: inline-block; vertical-align: middle; margin-right: 10px; }
+        .user-id { font-size: 12px; color: var(--neon); font-family: monospace; }
+        
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #151518; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
+        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+        .btn-main { background: linear-gradient(45deg, var(--neon), var(--ghost)); color: white; width: 100%; }
+        .btn-interact { background: transparent; color: #aaa; font-size: 0.9rem; margin-right: 15px; }
+        .btn-interact:hover { color: var(--neon); }
+
+        .feed-item { animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } }
     </style>
 </head>
 <body>
 
-<header>
-    <h1 style="letter-spacing: 5px;">GHOSTNET</h1>
-    <div id="status" class="user-id">Initializing P2P Node...</div>
-</header>
+<div class="nav">
+    <div style="font-weight: 900; letter-spacing: 2px;">GHOSTNET</div>
+    <div class="node-count" id="node-val">NODES: 1</div>
+</div>
 
-<div class="container">
-    <div class="post-card">
-        <textarea id="postInput" placeholder="What's happening in the GhostNet?"></textarea>
-        <button onclick="publishPost()">BROADCAST TO PEERS</button>
+<div id="auth-ui" class="auth-box">
+    <h3 style="margin-top:0">Web4 Identity</h3>
+    <input type="text" id="username" placeholder="Choose Display Name">
+    <input type="password" id="passphrase" placeholder="Secret Key / Passphrase">
+    <button class="btn-main" onclick="authAction('sign-up')">CREATE KEYSET</button>
+    <p style="font-size: 10px; color: #777; text-align: center;">Already have a key? Use it to Login.</p>
+</div>
+
+<div id="main-ui" class="container hidden">
+    <div class="post-card" style="border-left: 4px solid var(--neon);">
+        <div id="user-display" class="user-id"></div>
+        <textarea id="postContent" placeholder="Broadcast to the mesh..."></textarea>
+        <button class="btn-main" onclick="postMessage()">BROADCAST</button>
     </div>
-
+    
     <div id="feed"></div>
 </div>
 
 <script>
-    // 1. Initialize GunDB (Web4 P2P Engine)
-    // Using public relays for initial sync, but it works P2P in the browser
-    const gun = Gun([
-        'https://gun-manhattan.herokuapp.com/gun',
-        'https://peer.wall.org/gun'
-    ]);
+    // Initialize Gun & Peers
+    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://peer.wall.org/gun']);
+    const user = gun.user().recall({stickyness: true});
+    const sea = Gun.SEA;
 
-    // 2. Create/Load Anonymous Identity
-    // In Web4, your "key" is your identity. No server-side DB.
-    let user = gun.user().recall({stickyness: true});
-    
-    // For this example, we'll use a shared global feed namespace
-    const ghostFeed = gun.get('ghostnet_global_v1');
+    // Node Count Logic (Rough estimate based on mesh events)
+    let peerCount = 1;
+    gun.on('hi', () => { peerCount++; updateNodeUI(); });
+    function updateNodeUI() { document.getElementById('node-val').innerText = `NODES: ${peerCount}`; }
 
-    // 3. Display the Feed in Real-Time
-    ghostFeed.map().on((data, id) => {
-        if (!data || !data.text) return;
+    // Authentication Logic
+    async function authAction(type) {
+        const alias = document.getElementById('username').value;
+        const pass = document.getElementById('passphrase').value;
         
-        const feedDiv = document.getElementById('feed');
-        const existing = document.getElementById(id);
-        
-        if (!existing) {
-            const postElement = document.createElement('div');
-            postElement.id = id;
-            postElement.className = 'post-card';
-            postElement.innerHTML = `
-                <div class="user-id">PEER: ${id.substring(0, 12)}...</div>
-                <p>${data.text}</p>
-                <small style="color: #666;">${new Date(data.time).toLocaleString()}</small>
-            `;
-            feedDiv.prepend(postElement); // Show newest first
-        }
-    });
+        if(!alias || !pass) return alert("Keys required!");
 
-    // 4. Publish Function
-    function publishPost() {
-        const input = document.getElementById('postInput');
-        if (!input.value) return;
-
-        ghostFeed.set({
-            text: input.value,
-            time: Date.now()
+        user.create(alias, pass, (ack) => {
+            if (ack.err) { // If user exists, try to log in
+                user.auth(alias, pass, (authAck) => {
+                    if (authAck.err) alert(authAck.err);
+                    else startApp();
+                });
+            } else {
+                startApp();
+            }
         });
-
-        input.value = '';
-        document.getElementById('status').innerText = "Broadcast Successful";
-        setTimeout(() => { document.getElementById('status').innerText = "Node Online"; }, 2000);
     }
 
-    document.getElementById('status').innerText = "P2P Node Online";
-</script>
+    function startApp() {
+        document.getElementById('auth-ui').classList.add('hidden');
+        document.getElementById('main-ui').classList.remove('hidden');
+        document.getElementById('user-display').innerText = `LOGGED IN AS: ${user.is.alias}`;
+        loadFeed();
+    }
 
+    // Post System
+    async function postMessage() {
+        const text = document.getElementById('postContent').value;
+        if(!text) return;
+
+        const postData = {
+            author: user.is.alias,
+            pub: user.is.pub,
+            content: text,
+            time: Date.now(),
+            likes: 0
+        };
+
+        gun.get('ghost_social_v2').set(postData);
+        document.getElementById('postContent').value = '';
+    }
+
+    // Load & Render Feed
+    function loadFeed() {
+        const feedContainer = document.getElementById('feed');
+        
+        gun.get('ghost_social_v2').map().once((data, id) => {
+            if(!data || !data.content) return;
+            
+            const card = document.createElement('div');
+            card.className = 'post-card feed-item';
+            card.id = id;
+            card.innerHTML = `
+                <div class="avatar"></div>
+                <span class="user-id">@${data.author} • ${new Date(data.time).toLocaleTimeString()}</span>
+                <p style="line-height: 1.6; margin: 15px 0;">${data.content}</p>
+                <div style="border-top: 1px solid #222; padding-top: 10px;">
+                    <button class="btn-interact" onclick="likePost('${id}')">⚡ Like</button>
+                    <button class="btn-interact">💬 Reply</button>
+                    <button class="btn-interact">🔗 Share</button>
+                </div>
+            `;
+            feedContainer.prepend(card);
+        });
+    }
+
+    // Interactive Features
+    function likePost(postId) {
+        // Logic: Increment likes in the graph
+        const post = gun.get('ghost_social_v2').get(postId);
+        post.get('likes').once((val) => {
+            post.put({likes: (val || 0) + 1});
+        });
+    }
+
+    // Persist Login
+    if(user.is) startApp();
+
+</script>
 </body>
 </html>
