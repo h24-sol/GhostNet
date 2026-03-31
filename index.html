@@ -3,150 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOSTNET // WEB4 OS</title>
+    <title>GHOSTNET // WEB4 MASTER v6</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
     <style>
-        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #050507; --panel: #111115; --text: #e0e0e0; }
-        body { background: var(--dark); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #08080a; --card: #111116; }
+        body { background: var(--dark); color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         
-        /* Navigation */
-        .nav { padding: 15px 25px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; background: #000; z-index: 100; }
-        .logo { font-weight: 900; letter-spacing: 3px; color: white; }
-        .node-tag { font-size: 10px; color: var(--neon); border: 1px solid var(--neon); padding: 2px 8px; border-radius: 10px; }
-
-        /* Auth Screen */
-        #auth-layer { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: var(--panel); padding: 40px; border-radius: 24px; width: 350px; border: 1px solid #222; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
+        /* Layout Grid */
+        .nav { height: 60px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #000; }
+        .main-container { display: grid; grid-template-columns: 300px 1fr 300px; height: calc(100vh - 60px); }
         
-        /* Main Layout */
-        .app-grid { display: grid; grid-template-columns: 280px 1fr 300px; height: calc(100vh - 60px); }
-        .sidebar { border-right: 1px solid #222; padding: 20px; overflow-y: auto; background: #08080a; }
-        .feed-area { padding: 20px; overflow-y: auto; scroll-behavior: smooth; }
-        .chat-area { border-left: 1px solid #222; padding: 20px; background: #08080a; }
-
         /* Components */
-        .card { background: var(--panel); border: 1px solid #222; border-radius: 16px; padding: 15px; margin-bottom: 20px; }
-        .post { border-bottom: 1px solid #222; padding: 20px 0; animation: fadeIn 0.5s ease; }
-        .avatar { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(45deg, var(--ghost), var(--neon)); }
+        .panel { padding: 20px; overflow-y: auto; border-right: 1px solid #222; }
+        .card { background: var(--card); border: 1px solid #222; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 5px; }
+        .btn-neon { background: var(--neon); color: #000; }
+        .btn-ghost { background: var(--ghost); color: #fff; }
         
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #333; color: white; border-radius: 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 5px; }
-        .btn-neon { background: var(--neon); color: black; }
-        .btn-ghost { background: var(--ghost); color: white; }
-        .btn-outline { background: transparent; border: 1px solid #444; color: #888; font-size: 12px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; box-sizing: border-box; }
+        .key-box { font-size: 9px; color: var(--neon); background: #000; padding: 8px; border-radius: 4px; word-break: break-all; font-family: monospace; }
         
-        .key-text { font-family: monospace; font-size: 9px; color: var(--neon); word-break: break-all; background: #000; padding: 10px; border-radius: 8px; margin: 10px 0; }
+        /* Feed & Posts */
+        .post { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; border-left: 4px solid var(--ghost); }
+        .action-bar { display: flex; gap: 15px; font-size: 12px; color: #666; margin-top: 10px; border-top: 1px solid #222; padding-top: 8px; }
+        .action-bar span:hover { color: var(--neon); cursor: pointer; }
+
+        /* Auth Layer */
+        #auth-layer { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .hidden { display: none; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div id="auth-layer">
-    <div class="auth-card">
-        <h2 class="logo">GHOST<span style="color:var(--neon)">NET</span></h2>
-        <div id="reg-ui">
-            <input type="text" id="r-user" placeholder="Choose Alias">
-            <input type="password" id="r-pass" placeholder="Master Phrase">
-            <button class="btn-ghost" onclick="register()">CREATE IDENTITY</button>
-            <p style="font-size: 11px; color: #555; cursor:pointer" onclick="toggleAuth()">Already a Citizen? Login</p>
+    <div class="card" style="width: 320px; text-align: center; border: 1px solid var(--neon);">
+        <h2 style="letter-spacing: 3px;">GHOST<span style="color:var(--neon)">NET</span></h2>
+        <div id="auth-forms">
+            <input type="text" id="alias" placeholder="Username">
+            <input type="password" id="pass" placeholder="Secret Phrase">
+            <button class="btn btn-ghost" onclick="runRegister()">CREATE IDENTITY</button>
+            <button class="btn btn-neon" onclick="runLogin()">ACCESS MESH</button>
         </div>
-        <div id="log-ui" class="hidden">
-            <input type="text" id="l-user" placeholder="Alias">
-            <input type="password" id="l-pass" placeholder="Master Phrase">
-            <button class="btn-neon" onclick="login()">ENTER MESH</button>
-            <p style="font-size: 11px; color: #555; cursor:pointer" onclick="toggleAuth()">New here? Register</p>
-        </div>
+        <p id="auth-log" style="font-size: 10px; color: #555; margin-top: 10px;">Status: Awaiting Input</p>
     </div>
 </div>
 
 <div class="nav">
-    <div class="logo">GHOSTNET</div>
-    <div class="node-tag">NODES ONLINE: <span id="n-count">1</span></div>
+    <div style="font-weight: 900;">GHOSTNET // WEB4</div>
+    <div style="color: var(--neon); font-size: 12px;">NODE: ACTIVE</div>
 </div>
 
-<div class="app-grid">
-    <div class="sidebar">
-        <div class="card" style="text-align:center">
-            <div class="avatar" style="width:80px; height:80px; margin: 0 auto 15px auto;"></div>
-            <h3 id="u-name">User</h3>
-            <p style="font-size:12px; color:#666">Web4 Verified</p>
+<div class="main-container">
+    
+    <div class="panel">
+        <div class="card" style="text-align: center;">
+            <div style="width:60px; height:60px; background:linear-gradient(45deg, var(--ghost), var(--neon)); border-radius: 50%; margin: 0 auto 10px auto;"></div>
+            <h3 id="display-name" style="margin:0">User</h3>
+            <p style="font-size: 11px; color: #666;">Verified Citizen</p>
         </div>
         
         <div class="card">
-            <h4 style="margin:0 0 10px 0; font-size:12px; color:var(--neon)">PUBLIC ID (Address)</h4>
-            <div class="key-text" id="pub-key">Generating...</div>
-            
-            <h4 style="margin:15px 0 10px 0; font-size:12px; color:var(--ghost)">ENCRYPTION KEY</h4>
-            <div class="key-text">AES-256 Enabled</div>
-            <button class="btn-outline" onclick="copyKey()">COPY PUBLIC ID</button>
+            <div style="font-size: 10px; color: var(--neon); margin-bottom: 5px;">PUBLIC ID (SHARE THIS)</div>
+            <div class="key-box" id="pub-id">Not loaded</div>
+            <button class="btn" style="background:#222; color:#fff; font-size:10px;" onclick="copyKey()">COPY PUBLIC ID</button>
         </div>
+
+        <button class="btn" style="background:#400; color:#fff;" onclick="location.reload()">LOGOUT</button>
     </div>
 
-    <div class="feed-area">
-        <div class="card">
-            <textarea id="post-input" placeholder="Broadcast to the decentralized world..."></textarea>
-            <button class="btn-neon" onclick="sendPost()">BROADCAST</button>
+    <div class="panel" style="border-right: 1px solid #222;">
+        <div class="card" style="border: 1px solid var(--neon);">
+            <textarea id="post-input" placeholder="Broadcast to the Mesh..."></textarea>
+            <button class="btn btn-neon" onclick="sendPost()">BROADCAST</button>
         </div>
-        <div id="feed-wall"></div>
+        <div id="feed"></div>
     </div>
 
-    <div class="chat-area">
-        <h3 style="font-size:14px; margin-bottom:20px;">ENCRYPTED MESSAGES</h3>
-        <div id="chat-box" style="height: 300px; overflow-y:auto; font-size:13px; margin-bottom:10px;">
-            <p style="color:#444">Select a peer to message...</p>
+    <div class="panel" style="border-right: none;">
+        <h3>ENCRYPTED CHAT</h3>
+        <div id="chat-window" style="height: 300px; overflow-y: auto; background: #000; border-radius: 8px; padding: 10px; font-size: 12px; margin-bottom: 10px;">
+            <p style="color:#333;">Direct Peer-to-Peer messaging enabled.</p>
         </div>
-        <input type="text" id="target-pub" placeholder="Receiver Public ID">
-        <textarea id="chat-input" placeholder="Encrypted message..." style="height:60px;"></textarea>
-        <button class="btn-ghost" onclick="sendDirect()">SEND P2P</button>
+        <input type="text" id="target-id" placeholder="Paste Friend's Public ID">
+        <textarea id="chat-msg" placeholder="Your message..." style="height: 60px;"></textarea>
+        <button class="btn btn-ghost" onclick="sendDirect()">SEND ENCRYPTED</button>
     </div>
+
 </div>
 
 <script>
-    // 1. Initialize Decentralized Mesh
-    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://peer.wall.org/gun']);
+    // Initialize Mesh
+    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
     const user = gun.user().recall({stickyness: true});
 
-    // 2. Auth Logic
-    function toggleAuth() {
-        document.getElementById('reg-ui').classList.toggle('hidden');
-        document.getElementById('log-ui').classList.toggle('hidden');
-    }
-
-    async function register() {
-        const u = document.getElementById('r-user').value;
-        const p = document.getElementById('r-pass').value;
+    // --- AUTH LOGIC ---
+    function runRegister() {
+        const u = document.getElementById('alias').value;
+        const p = document.getElementById('pass').value;
+        document.getElementById('auth-log').innerText = "Status: Generating Cryptography...";
         user.create(u, p, (ack) => {
-            if(ack.err) return alert(ack.err);
-            alert("Identity Created. Now Login.");
-            toggleAuth();
+            if(ack.err) alert(ack.err);
+            else alert("Account Generated. Please click Access Mesh.");
         });
     }
 
-    function login() {
-        const u = document.getElementById('l-user').value;
-        const p = document.getElementById('l-pass').value;
+    function runLogin() {
+        const u = document.getElementById('alias').value;
+        const p = document.getElementById('pass').value;
         user.auth(u, p, (ack) => {
-            if(ack.err) return alert("Fail: " + ack.err);
-            initApp();
+            if(ack.err) alert(ack.err);
+            else launch();
         });
     }
 
-    function initApp() {
-        document.getElementById('auth-layer').style.display = 'none';
-        document.getElementById('u-name').innerText = user.is.alias;
-        document.getElementById('pub-key').innerText = user.is.pub;
-        renderFeed();
-        listenMessages();
+    function launch() {
+        document.getElementById('auth-layer').classList.add('hidden');
+        document.getElementById('display-name').innerText = user.is.alias;
+        document.getElementById('pub-id').innerText = user.is.pub;
+        loadFeed();
+        loadMessages();
     }
 
-    // 3. Global Feed Logic (Like, Comment, Share)
+    // --- SOCIAL LOGIC ---
     function sendPost() {
         const txt = document.getElementById('post-input').value;
         if(!txt) return;
-        gun.get('ghostnet_v5_global').set({
-            author: user.is.alias,
+        gun.get('ghostnet_v6_main').set({
+            name: user.is.alias,
             pub: user.is.pub,
             body: txt,
             time: Date.now(),
@@ -155,57 +139,61 @@
         document.getElementById('post-input').value = '';
     }
 
-    function renderFeed() {
-        const wall = document.getElementById('feed-wall');
-        gun.get('ghostnet_v5_global').map().once((data, id) => {
+    function loadFeed() {
+        const feed = document.getElementById('feed');
+        gun.get('ghostnet_v6_main').map().once((data, id) => {
             if(!data || !data.body) return;
-            const post = document.createElement('div');
-            post.className = 'post';
-            post.innerHTML = `
-                <div style="display:flex; gap:10px; align-items:center">
-                    <div class="avatar" style="width:30px; height:30px"></div>
-                    <div style="font-weight:bold; font-size:14px;">@${data.author}</div>
-                </div>
-                <p style="margin: 15px 0; line-height:1.5">${data.body}</p>
-                <div style="display:flex; gap:20px; font-size:12px; color:#666">
-                    <span onclick="like('${id}')" style="cursor:pointer">⚡ Like (${data.likes || 0})</span>
-                    <span style="cursor:pointer">💬 Comment</span>
-                    <span style="cursor:pointer">🔗 Share</span>
+            const div = document.createElement('div');
+            div.className = 'post';
+            div.innerHTML = `
+                <div style="color:var(--neon); font-size:12px; font-weight:bold;">@${data.name}</div>
+                <div style="margin:10px 0; font-size:14px;">${data.body}</div>
+                <div class="action-bar">
+                    <span onclick="like('${id}')">⚡ Like (${data.likes || 0})</span>
+                    <span>💬 Comment</span>
+                    <span>🔗 Share</span>
                 </div>
             `;
-            wall.prepend(post);
+            feed.prepend(div);
         });
     }
 
-    // 4. Encrypted Messaging Logic
-    async function sendDirect() {
-        const target = document.getElementById('target-pub').value;
-        const msg = document.getElementById('chat-input').value;
-        if(!target || !msg) return;
-
-        // Encrypt message for target's public key
-        const secret = await Gun.SEA.encrypt(msg, await gun.user(target).get('epub'));
-        gun.user(target).get('inbox').set({ from: user.is.pub, data: secret });
-        document.getElementById('chat-input').value = '';
-        alert("Encrypted & Sent!");
+    function like(postId) {
+        const ref = gun.get('ghostnet_v6_main').get(postId);
+        ref.get('likes').once((val) => {
+            ref.put({likes: (val || 0) + 1});
+        });
     }
 
-    function listenMessages() {
+    // --- ENCRYPTED MESSAGING ---
+    async function sendDirect() {
+        const targetPub = document.getElementById('target-id').value;
+        const msg = document.getElementById('chat-msg').value;
+        if(!targetPub || !msg) return;
+
+        // Encrypt for target's public key
+        const secret = await Gun.SEA.encrypt(msg, await gun.user(targetPub).get('epub'));
+        gun.user(targetPub).get('inbox').set({ from: user.is.alias, data: secret });
+        document.getElementById('chat-msg').value = '';
+        alert("Encrypted message broadcasted!");
+    }
+
+    function loadMessages() {
         user.get('inbox').map().once(async (data) => {
             const dec = await Gun.SEA.decrypt(data.data, user._.sea);
-            const msgItem = document.createElement('div');
-            msgItem.style = "background:#1a1a1a; padding:10px; border-radius:8px; margin-bottom:5px;";
-            msgItem.innerHTML = `<strong>From ${data.from.substring(0,8)}:</strong><br>${dec}`;
-            document.getElementById('chat-box').appendChild(msgItem);
+            const msgDiv = document.createElement('div');
+            msgDiv.style = "background:#1a1a1a; padding:5px; margin-bottom:5px; border-radius:4px;";
+            msgDiv.innerHTML = `<strong style="color:var(--ghost)">${data.from}:</strong> ${dec}`;
+            document.getElementById('chat-window').appendChild(msgDiv);
         });
     }
 
     function copyKey() {
         navigator.clipboard.writeText(user.is.pub);
-        alert("Public ID Copied!");
+        alert("Public ID Copied to clipboard!");
     }
 
-    if(user.is) initApp();
+    if(user.is) launch();
 </script>
 </body>
 </html>
