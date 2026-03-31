@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOSTNET // WEB4</title>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --dark-bg: #0a0a0c;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Web4 Glassmorphism UI */
+        .container {
+            width: 90%;
+            max-width: 500px;
+            margin-top: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            width: 100%;
+        }
+
+        .post-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 12px;
+            border-left: 4px solid var(--neon-purple);
+            animation: fadeIn 0.5s ease;
+        }
+
+        input, textarea {
+            width: 100%;
+            background: #1a1a1e;
+            border: 1px solid #333;
+            color: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        button:hover { opacity: 0.8; transform: scale(0.98); }
+
+        .user-id { font-size: 10px; color: var(--neon-blue); opacity: 0.7; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="letter-spacing: 5px;">GHOSTNET</h1>
+    <div id="status" class="user-id">Initializing P2P Node...</div>
+</header>
+
+<div class="container">
+    <div class="post-card">
+        <textarea id="postInput" placeholder="What's happening in the GhostNet?"></textarea>
+        <button onclick="publishPost()">BROADCAST TO PEERS</button>
+    </div>
+
+    <div id="feed"></div>
+</div>
+
+<script>
+    // 1. Initialize GunDB (Web4 P2P Engine)
+    // Using public relays for initial sync, but it works P2P in the browser
+    const gun = Gun([
+        'https://gun-manhattan.herokuapp.com/gun',
+        'https://peer.wall.org/gun'
+    ]);
+
+    // 2. Create/Load Anonymous Identity
+    // In Web4, your "key" is your identity. No server-side DB.
+    let user = gun.user().recall({stickyness: true});
+    
+    // For this example, we'll use a shared global feed namespace
+    const ghostFeed = gun.get('ghostnet_global_v1');
+
+    // 3. Display the Feed in Real-Time
+    ghostFeed.map().on((data, id) => {
+        if (!data || !data.text) return;
+        
+        const feedDiv = document.getElementById('feed');
+        const existing = document.getElementById(id);
+        
+        if (!existing) {
+            const postElement = document.createElement('div');
+            postElement.id = id;
+            postElement.className = 'post-card';
+            postElement.innerHTML = `
+                <div class="user-id">PEER: ${id.substring(0, 12)}...</div>
+                <p>${data.text}</p>
+                <small style="color: #666;">${new Date(data.time).toLocaleString()}</small>
+            `;
+            feedDiv.prepend(postElement); // Show newest first
+        }
+    });
+
+    // 4. Publish Function
+    function publishPost() {
+        const input = document.getElementById('postInput');
+        if (!input.value) return;
+
+        ghostFeed.set({
+            text: input.value,
+            time: Date.now()
+        });
+
+        input.value = '';
+        document.getElementById('status').innerText = "Broadcast Successful";
+        setTimeout(() => { document.getElementById('status').innerText = "Node Online"; }, 2000);
+    }
+
+    document.getElementById('status').innerText = "P2P Node Online";
+</script>
+
+</body>
+</html>
