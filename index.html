@@ -3,197 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOSTNET // WEB4 MASTER v6</title>
+    <title>GHOSTNET // STABLE v7</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
     <style>
-        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #08080a; --card: #111116; }
-        body { background: var(--dark); color: #e0e0e0; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #050507; }
+        body { background: var(--dark); color: white; font-family: monospace; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
         
-        /* Layout Grid */
-        .nav { height: 60px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #000; }
-        .main-container { display: grid; grid-template-columns: 300px 1fr 300px; height: calc(100vh - 60px); }
+        .card { background: #111; border: 1px solid #333; padding: 30px; border-radius: 15px; width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: var(--neon); border-radius: 5px; box-sizing: border-box; }
         
-        /* Components */
-        .panel { padding: 20px; overflow-y: auto; border-right: 1px solid #222; }
-        .card { background: var(--card); border: 1px solid #222; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; margin-top: 5px; }
-        .btn-neon { background: var(--neon); color: #000; }
-        .btn-ghost { background: var(--ghost); color: #fff; }
+        button { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        .btn-reg { background: var(--ghost); color: white; }
+        .btn-log { background: var(--neon); color: black; }
         
-        input, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 6px; box-sizing: border-box; }
-        .key-box { font-size: 9px; color: var(--neon); background: #000; padding: 8px; border-radius: 4px; word-break: break-all; font-family: monospace; }
+        #console { font-size: 10px; color: #666; margin-top: 20px; width: 320px; text-align: left; border-top: 1px solid #222; padding-top: 10px; }
+        .hidden { display: none !important; }
         
-        /* Feed & Posts */
-        .post { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #222; margin-bottom: 15px; border-left: 4px solid var(--ghost); }
-        .action-bar { display: flex; gap: 15px; font-size: 12px; color: #666; margin-top: 10px; border-top: 1px solid #222; padding-top: 8px; }
-        .action-bar span:hover { color: var(--neon); cursor: pointer; }
-
-        /* Auth Layer */
-        #auth-layer { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .hidden { display: none; }
+        /* App UI */
+        #app { width: 90%; max-width: 600px; padding: 20px; }
+        .post { background: #111; border-left: 3px solid var(--neon); padding: 15px; margin-bottom: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="auth-layer">
-    <div class="card" style="width: 320px; text-align: center; border: 1px solid var(--neon);">
-        <h2 style="letter-spacing: 3px;">GHOST<span style="color:var(--neon)">NET</span></h2>
-        <div id="auth-forms">
-            <input type="text" id="alias" placeholder="Username">
-            <input type="password" id="pass" placeholder="Secret Phrase">
-            <button class="btn btn-ghost" onclick="runRegister()">CREATE IDENTITY</button>
-            <button class="btn btn-neon" onclick="runLogin()">ACCESS MESH</button>
-        </div>
-        <p id="auth-log" style="font-size: 10px; color: #555; margin-top: 10px;">Status: Awaiting Input</p>
+    <div id="auth-ui" class="card">
+        <h2 style="letter-spacing: 5px; margin-bottom: 5px;">GHOSTNET</h2>
+        <div id="mesh-status" style="font-size: 9px; color: yellow; margin-bottom: 20px;">MESH: CONNECTING...</div>
+        
+        <input type="text" id="user" placeholder="USERNAME">
+        <input type="password" id="pass" placeholder="PASSPHRASE">
+        
+        <button class="btn-reg" onclick="handleAuth('create')">1. Create Identity</button>
+        <button class="btn-log" onclick="handleAuth('auth')">2. Access Mesh</button>
+        
+        <div id="console">System: Awaiting user input...</div>
     </div>
-</div>
 
-<div class="nav">
-    <div style="font-weight: 900;">GHOSTNET // WEB4</div>
-    <div style="color: var(--neon); font-size: 12px;">NODE: ACTIVE</div>
-</div>
-
-<div class="main-container">
-    
-    <div class="panel">
-        <div class="card" style="text-align: center;">
-            <div style="width:60px; height:60px; background:linear-gradient(45deg, var(--ghost), var(--neon)); border-radius: 50%; margin: 0 auto 10px auto;"></div>
-            <h3 id="display-name" style="margin:0">User</h3>
-            <p style="font-size: 11px; color: #666;">Verified Citizen</p>
+    <div id="app" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="alias-tag">@Citizen</h3>
+            <button onclick="location.reload()" style="width: auto; padding: 5px 10px; font-size: 10px; background: #300; color: white;">Logout</button>
         </div>
         
-        <div class="card">
-            <div style="font-size: 10px; color: var(--neon); margin-bottom: 5px;">PUBLIC ID (SHARE THIS)</div>
-            <div class="key-box" id="pub-id">Not loaded</div>
-            <button class="btn" style="background:#222; color:#fff; font-size:10px;" onclick="copyKey()">COPY PUBLIC ID</button>
+        <div class="card" style="width: 100%; margin-bottom: 20px; box-sizing: border-box;">
+            <textarea id="msg" style="width:100%; height:60px; background:#000; color:white; border:1px solid #333; padding:10px;" placeholder="Broadcast to Web4..."></textarea>
+            <button class="btn-log" onclick="broadcast()">BROADCAST</button>
         </div>
-
-        <button class="btn" style="background:#400; color:#fff;" onclick="location.reload()">LOGOUT</button>
-    </div>
-
-    <div class="panel" style="border-right: 1px solid #222;">
-        <div class="card" style="border: 1px solid var(--neon);">
-            <textarea id="post-input" placeholder="Broadcast to the Mesh..."></textarea>
-            <button class="btn btn-neon" onclick="sendPost()">BROADCAST</button>
-        </div>
+        
         <div id="feed"></div>
     </div>
 
-    <div class="panel" style="border-right: none;">
-        <h3>ENCRYPTED CHAT</h3>
-        <div id="chat-window" style="height: 300px; overflow-y: auto; background: #000; border-radius: 8px; padding: 10px; font-size: 12px; margin-bottom: 10px;">
-            <p style="color:#333;">Direct Peer-to-Peer messaging enabled.</p>
-        </div>
-        <input type="text" id="target-id" placeholder="Paste Friend's Public ID">
-        <textarea id="chat-msg" placeholder="Your message..." style="height: 60px;"></textarea>
-        <button class="btn btn-ghost" onclick="sendDirect()">SEND ENCRYPTED</button>
-    </div>
-
-</div>
-
 <script>
-    // Initialize Mesh
-    const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-    const user = gun.user().recall({stickyness: true});
+    // Use high-availability relays
+    const gun = Gun([
+        'https://gun-manhattan.herokuapp.com/gun',
+        'https://peer.wall.org/gun'
+    ]);
+    const user = gun.user();
 
-    // --- AUTH LOGIC ---
-    function runRegister() {
-        const u = document.getElementById('alias').value;
+    const log = (msg) => {
+        const c = document.getElementById('console');
+        c.innerHTML += `<br>> ${msg}`;
+        console.log(msg);
+    };
+
+    // Mesh Status Check
+    gun.on('hi', () => {
+        document.getElementById('mesh-status').innerText = "MESH: ONLINE (PEER FOUND)";
+        document.getElementById('mesh-status').style.color = "#00f3ff";
+    });
+
+    async function handleAuth(type) {
+        const u = document.getElementById('user').value;
         const p = document.getElementById('pass').value;
-        document.getElementById('auth-log').innerText = "Status: Generating Cryptography...";
-        user.create(u, p, (ack) => {
-            if(ack.err) alert(ack.err);
-            else alert("Account Generated. Please click Access Mesh.");
+
+        if(!u || !p) return log("Error: Empty fields.");
+
+        if(type === 'create') {
+            log("Generating Keypair...");
+            user.create(u, p, (ack) => {
+                if(ack.err) {
+                    log("Reg Failed: " + ack.err);
+                    alert("Registration Error: " + ack.err);
+                } else {
+                    log("Identity created. Try Accessing now.");
+                    alert("Account Created! Now click 'Access Mesh'.");
+                }
+            });
+        } else {
+            log("Verifying Cryptography...");
+            // Force a 10s timeout to catch "hanging" logins
+            const timeout = setTimeout(() => {
+                log("Mesh Timeout. Check connection.");
+                alert("Mesh connection slow. Try again in 5 seconds.");
+            }, 10000);
+
+            user.auth(u, p, (ack) => {
+                clearTimeout(timeout);
+                if(ack.err) {
+                    log("Auth Failed: " + ack.err);
+                    alert("Access Denied: Check username/password.");
+                } else {
+                    log("Handshake Success!");
+                    startApp();
+                }
+            });
+        }
+    }
+
+    function startApp() {
+        document.getElementById('auth-ui').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        document.getElementById('alias-tag').innerText = "@" + user.is.alias;
+        
+        // Load Feed
+        gun.get('ghostnet_v7_feed').map().once((data, id) => {
+            if(!data || !data.msg) return;
+            const post = document.createElement('div');
+            post.className = 'post';
+            post.innerHTML = `<strong>@${data.user}</strong><br>${data.msg}`;
+            document.getElementById('feed').prepend(post);
         });
     }
 
-    function runLogin() {
-        const u = document.getElementById('alias').value;
-        const p = document.getElementById('pass').value;
-        user.auth(u, p, (ack) => {
-            if(ack.err) alert(ack.err);
-            else launch();
-        });
-    }
-
-    function launch() {
-        document.getElementById('auth-layer').classList.add('hidden');
-        document.getElementById('display-name').innerText = user.is.alias;
-        document.getElementById('pub-id').innerText = user.is.pub;
-        loadFeed();
-        loadMessages();
-    }
-
-    // --- SOCIAL LOGIC ---
-    function sendPost() {
-        const txt = document.getElementById('post-input').value;
+    function broadcast() {
+        const txt = document.getElementById('msg').value;
         if(!txt) return;
-        gun.get('ghostnet_v6_main').set({
-            name: user.is.alias,
-            pub: user.is.pub,
-            body: txt,
-            time: Date.now(),
-            likes: 0
+        gun.get('ghostnet_v7_feed').set({
+            user: user.is.alias,
+            msg: txt,
+            time: Date.now()
         });
-        document.getElementById('post-input').value = '';
+        document.getElementById('msg').value = '';
     }
 
-    function loadFeed() {
-        const feed = document.getElementById('feed');
-        gun.get('ghostnet_v6_main').map().once((data, id) => {
-            if(!data || !data.body) return;
-            const div = document.createElement('div');
-            div.className = 'post';
-            div.innerHTML = `
-                <div style="color:var(--neon); font-size:12px; font-weight:bold;">@${data.name}</div>
-                <div style="margin:10px 0; font-size:14px;">${data.body}</div>
-                <div class="action-bar">
-                    <span onclick="like('${id}')">⚡ Like (${data.likes || 0})</span>
-                    <span>💬 Comment</span>
-                    <span>🔗 Share</span>
-                </div>
-            `;
-            feed.prepend(div);
-        });
-    }
+    // Auto-login logic
+    if(user.is) startApp();
 
-    function like(postId) {
-        const ref = gun.get('ghostnet_v6_main').get(postId);
-        ref.get('likes').once((val) => {
-            ref.put({likes: (val || 0) + 1});
-        });
-    }
-
-    // --- ENCRYPTED MESSAGING ---
-    async function sendDirect() {
-        const targetPub = document.getElementById('target-id').value;
-        const msg = document.getElementById('chat-msg').value;
-        if(!targetPub || !msg) return;
-
-        // Encrypt for target's public key
-        const secret = await Gun.SEA.encrypt(msg, await gun.user(targetPub).get('epub'));
-        gun.user(targetPub).get('inbox').set({ from: user.is.alias, data: secret });
-        document.getElementById('chat-msg').value = '';
-        alert("Encrypted message broadcasted!");
-    }
-
-    function loadMessages() {
-        user.get('inbox').map().once(async (data) => {
-            const dec = await Gun.SEA.decrypt(data.data, user._.sea);
-            const msgDiv = document.createElement('div');
-            msgDiv.style = "background:#1a1a1a; padding:5px; margin-bottom:5px; border-radius:4px;";
-            msgDiv.innerHTML = `<strong style="color:var(--ghost)">${data.from}:</strong> ${dec}`;
-            document.getElementById('chat-window').appendChild(msgDiv);
-        });
-    }
-
-    function copyKey() {
-        navigator.clipboard.writeText(user.is.pub);
-        alert("Public ID Copied to clipboard!");
-    }
-
-    if(user.is) launch();
 </script>
 </body>
 </html>
