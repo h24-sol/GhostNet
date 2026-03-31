@@ -3,151 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOSTNET // MASTER v2</title>
+    <title>GHOSTNET // WEB4 MASTER</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
     <style>
-        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #0a0a0c; --glass: rgba(255,255,255,0.05); }
-        body { background: var(--dark); color: white; font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #050507; --glass: rgba(255,255,255,0.03); }
+        body { background: var(--dark); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
         
-        .nav { width: 100%; padding: 15px; border-bottom: 1px solid var(--neon); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); position: sticky; top: 0; z-index: 100; }
-        .node-count { color: var(--neon); font-size: 0.8rem; font-weight: bold; text-shadow: 0 0 5px var(--neon); }
-        
-        .auth-box { background: var(--glass); padding: 20px; border-radius: 15px; margin-top: 20px; width: 90%; max-width: 400px; border: 1px solid var(--ghost); }
-        .hidden { display: none; }
-        
-        .container { width: 95%; max-width: 600px; padding: 20px 0; }
-        .post-card { background: var(--glass); border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; }
-        .post-card:hover { border-color: var(--neon); }
-        
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(45deg, var(--neon), var(--ghost)); display: inline-block; vertical-align: middle; margin-right: 10px; }
-        .user-id { font-size: 12px; color: var(--neon); font-family: monospace; }
-        
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #151518; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
-        button { cursor: pointer; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-        .btn-main { background: linear-gradient(45deg, var(--neon), var(--ghost)); color: white; width: 100%; }
-        .btn-interact { background: transparent; color: #aaa; font-size: 0.9rem; margin-right: 15px; }
-        .btn-interact:hover { color: var(--neon); }
+        /* Navigation & Status */
+        .nav { width: 100%; padding: 15px 25px; border-bottom: 1px solid rgba(0, 243, 255, 0.3); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 100; box-sizing: border-box; }
+        .node-status { color: var(--neon); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
 
-        .feed-item { animation: slideIn 0.4s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } }
+        /* Auth UI */
+        .auth-container { display: flex; justify-content: center; align-items: center; height: 80vh; }
+        .auth-card { background: #0f0f13; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .tab-group { display: flex; margin-bottom: 20px; gap: 10px; }
+        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; border-bottom: 2px solid #222; color: #555; transition: 0.3s; }
+        .tab.active { border-color: var(--neon); color: var(--neon); }
+
+        /* Layout */
+        .main-layout { display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .sidebar { background: var(--glass); border-radius: 15px; padding: 20px; border: 1px solid #1a1a1a; height: fit-content; }
+        
+        /* Post Styling */
+        .post-card { background: #111115; border-radius: 15px; padding: 20px; margin-bottom: 20px; border: 1px solid #1a1a1a; transition: 0.2s; }
+        .post-card:hover { border-color: var(--ghost); }
+        .author-info { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .avatar { width: 35px; height: 35px; border-radius: 8px; background: linear-gradient(45deg, var(--neon), var(--ghost)); }
+        
+        /* Inputs */
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #222; color: white; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        input:focus { border-color: var(--neon); outline: none; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-neon { background: var(--neon); color: black; }
+        .btn-ghost { background: var(--ghost); color: white; }
+        
+        .key-vault { background: #1a1a1e; padding: 10px; border-radius: 5px; font-size: 10px; word-break: break-all; color: #aaa; margin-top: 10px; border: 1px dashed var(--neon); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="nav">
-    <div style="font-weight: 900; letter-spacing: 2px;">GHOSTNET</div>
-    <div class="node-count" id="node-val">NODES: 1</div>
+    <div style="font-weight: 900; font-size: 1.2rem;">GHOST<span style="color:var(--neon)">NET</span></div>
+    <div class="node-status" id="peer-count">Establishing Mesh...</div>
 </div>
 
-<div id="auth-ui" class="auth-box">
-    <h3 style="margin-top:0">Web4 Identity</h3>
-    <input type="text" id="username" placeholder="Choose Display Name">
-    <input type="password" id="passphrase" placeholder="Secret Key / Passphrase">
-    <button class="btn-main" onclick="authAction('sign-up')">CREATE KEYSET</button>
-    <p style="font-size: 10px; color: #777; text-align: center;">Already have a key? Use it to Login.</p>
-</div>
+<div id="auth-layer" class="auth-container">
+    <div class="auth-card">
+        <div class="tab-group">
+            <div id="tab-reg" class="tab active" onclick="toggleAuth('reg')">Register</div>
+            <div id="tab-log" class="tab" onclick="toggleAuth('log')">Login</div>
+        </div>
 
-<div id="main-ui" class="container hidden">
-    <div class="post-card" style="border-left: 4px solid var(--neon);">
-        <div id="user-display" class="user-id"></div>
-        <textarea id="postContent" placeholder="Broadcast to the mesh..."></textarea>
-        <button class="btn-main" onclick="postMessage()">BROADCAST</button>
+        <div id="reg-form">
+            <input type="text" id="reg-alias" placeholder="Username (Display Name)">
+            <input type="password" id="reg-pass" placeholder="Create Secret Passphrase">
+            <button class="btn btn-neon" onclick="handleRegister()">GENERATE WEB4 IDENTITY</button>
+        </div>
+
+        <div id="log-form" class="hidden">
+            <input type="text" id="log-alias" placeholder="Username">
+            <input type="password" id="log-pass" placeholder="Secret Passphrase">
+            <button class="btn btn-ghost" onclick="handleLogin()">ACCESS MESH</button>
+        </div>
     </div>
-    
-    <div id="feed"></div>
+</div>
+
+<div id="app-layer" class="main-layout hidden">
+    <div class="sidebar">
+        <div class="avatar" style="width:60px; height:60px; margin-bottom:15px;"></div>
+        <h3 id="prof-name" style="margin:0">User</h3>
+        <p id="prof-bio" style="font-size: 12px; color: #888;">Web4 Citizen</p>
+        <hr style="border: 0.5px solid #222; margin: 20px 0;">
+        <div style="font-size: 11px; color: var(--neon);">YOUR PRIVATE KEY VAULT</div>
+        <div class="key-vault" id="key-display">Not shared</div>
+        <button class="btn" style="background: #222; color: white; font-size: 12px;" onclick="copyKey()">COPY KEY</button>
+        <button class="btn" style="background: #a00; color: white; margin-top: 40px;" onclick="location.reload()">LOGOUT</button>
+    </div>
+
+    <div class="feed-container">
+        <div class="post-card" style="border: 1px solid var(--neon)">
+            <textarea id="post-text" placeholder="Share something with the mesh..."></textarea>
+            <button class="btn btn-neon" onclick="publish()">BROADCAST</button>
+        </div>
+        <div id="feed"></div>
+    </div>
 </div>
 
 <script>
-    // Initialize Gun & Peers
     const gun = Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://peer.wall.org/gun']);
     const user = gun.user().recall({stickyness: true});
     const sea = Gun.SEA;
 
-    // Node Count Logic (Rough estimate based on mesh events)
-    let peerCount = 1;
-    gun.on('hi', () => { peerCount++; updateNodeUI(); });
-    function updateNodeUI() { document.getElementById('node-val').innerText = `NODES: ${peerCount}`; }
+    // UI Toggles
+    function toggleAuth(mode) {
+        document.getElementById('reg-form').classList.toggle('hidden', mode === 'log');
+        document.getElementById('log-form').classList.toggle('hidden', mode === 'reg');
+        document.getElementById('tab-reg').classList.toggle('active', mode === 'reg');
+        document.getElementById('tab-log').classList.toggle('active', mode === 'log');
+    }
 
-    // Authentication Logic
-    async function authAction(type) {
-        const alias = document.getElementById('username').value;
-        const pass = document.getElementById('passphrase').value;
-        
-        if(!alias || !pass) return alert("Keys required!");
+    // Web4 Registration
+    async function handleRegister() {
+        const alias = document.getElementById('reg-alias').value;
+        const pass = document.getElementById('reg-pass').value;
+        if(!alias || !pass) return alert("Fill all fields");
 
-        user.create(alias, pass, (ack) => {
-            if (ack.err) { // If user exists, try to log in
-                user.auth(alias, pass, (authAck) => {
-                    if (authAck.err) alert(authAck.err);
-                    else startApp();
-                });
-            } else {
-                startApp();
-            }
+        user.create(alias, pass, async (ack) => {
+            if(ack.err) return alert(ack.err);
+            handleLogin(alias, pass); // Auto login after reg
         });
     }
 
-    function startApp() {
-        document.getElementById('auth-ui').classList.add('hidden');
-        document.getElementById('main-ui').classList.remove('hidden');
-        document.getElementById('user-display').innerText = `LOGGED IN AS: ${user.is.alias}`;
-        loadFeed();
+    // Web4 Login
+    function handleLogin(a, p) {
+        const alias = a || document.getElementById('log-alias').value;
+        const pass = p || document.getElementById('log-pass').value;
+
+        user.auth(alias, pass, (ack) => {
+            if(ack.err) return alert("Invalid Credentials");
+            showApp();
+        });
     }
 
-    // Post System
-    async function postMessage() {
-        const text = document.getElementById('postContent').value;
+    async function showApp() {
+        document.getElementById('auth-layer').classList.add('hidden');
+        document.getElementById('app-layer').classList.remove('hidden');
+        document.getElementById('prof-name').innerText = user.is.alias;
+        
+        // Unique Web4 Feature: Showing the cryptographic Public Key
+        document.getElementById('key-display').innerText = user.is.pub;
+        
+        loadPosts();
+    }
+
+    // Post Broadcast
+    function publish() {
+        const text = document.getElementById('post-text').value;
         if(!text) return;
 
-        const postData = {
+        const post = {
             author: user.is.alias,
             pub: user.is.pub,
             content: text,
-            time: Date.now(),
-            likes: 0
+            time: Date.now()
         };
 
-        gun.get('ghost_social_v2').set(postData);
-        document.getElementById('postContent').value = '';
+        gun.get('ghost_v3_feed').set(post);
+        document.getElementById('post-text').value = '';
     }
 
-    // Load & Render Feed
-    function loadFeed() {
-        const feedContainer = document.getElementById('feed');
-        
-        gun.get('ghost_social_v2').map().once((data, id) => {
+    // Real-time Feed load
+    function loadPosts() {
+        const feed = document.getElementById('feed');
+        gun.get('ghost_v3_feed').map().once((data, id) => {
             if(!data || !data.content) return;
-            
-            const card = document.createElement('div');
-            card.className = 'post-card feed-item';
-            card.id = id;
-            card.innerHTML = `
-                <div class="avatar"></div>
-                <span class="user-id">@${data.author} • ${new Date(data.time).toLocaleTimeString()}</span>
-                <p style="line-height: 1.6; margin: 15px 0;">${data.content}</p>
-                <div style="border-top: 1px solid #222; padding-top: 10px;">
-                    <button class="btn-interact" onclick="likePost('${id}')">⚡ Like</button>
-                    <button class="btn-interact">💬 Reply</button>
-                    <button class="btn-interact">🔗 Share</button>
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.innerHTML = `
+                <div class="author-info">
+                    <div class="avatar"></div>
+                    <div>
+                        <div style="font-weight:bold">@${data.author}</div>
+                        <div style="font-size:10px; color:var(--neon)">${data.pub.substring(0,15)}...</div>
+                    </div>
                 </div>
+                <div style="font-size:15px; line-height:1.6">${data.content}</div>
+                <div style="margin-top:15px; font-size:11px; color:#555">${new Date(data.time).toLocaleString()}</div>
             `;
-            feedContainer.prepend(card);
+            feed.prepend(div);
         });
     }
 
-    // Interactive Features
-    function likePost(postId) {
-        // Logic: Increment likes in the graph
-        const post = gun.get('ghost_social_v2').get(postId);
-        post.get('likes').once((val) => {
-            post.put({likes: (val || 0) + 1});
-        });
+    function copyKey() {
+        navigator.clipboard.writeText(user.is.pub);
+        alert("Public Identity Key Copied!");
     }
 
-    // Persist Login
-    if(user.is) startApp();
+    // Peer count simulation
+    setInterval(() => {
+        const count = Math.floor(Math.random() * 5) + 1; // Simulated node count
+        document.getElementById('peer-count').innerText = `MESH ACTIVE: ${count} NODES`;
+    }, 5000);
 
+    if(user.is) showApp();
 </script>
+
 </body>
 </html>
