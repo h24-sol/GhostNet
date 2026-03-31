@@ -1,146 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOSTNET // STABLE v7</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
-    <style>
-        :root { --neon: #00f3ff; --ghost: #bc13fe; --dark: #050507; }
-        body { background: var(--dark); color: white; font-family: monospace; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        
-        .card { background: #111; border: 1px solid #333; padding: 30px; border-radius: 15px; width: 320px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: var(--neon); border-radius: 5px; box-sizing: border-box; }
-        
-        button { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        .btn-reg { background: var(--ghost); color: white; }
-        .btn-log { background: var(--neon); color: black; }
-        
-        #console { font-size: 10px; color: #666; margin-top: 20px; width: 320px; text-align: left; border-top: 1px solid #222; padding-top: 10px; }
-        .hidden { display: none !important; }
-        
-        /* App UI */
-        #app { width: 90%; max-width: 600px; padding: 20px; }
-        .post { background: #111; border-left: 3px solid var(--neon); padding: 15px; margin-bottom: 10px; border-radius: 5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GhostNet v8 - Web4 Social</title>
+
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+
+<style>
+body { background:#050507; color:white; font-family:monospace; margin:0; text-align:center; }
+.card { background:#111; padding:20px; margin:10px auto; width:90%; max-width:400px; border-radius:10px; }
+input, textarea {
+    width:100%; padding:10px; margin:5px 0;
+    background:#000; color:#00f3ff; border:1px solid #333;
+}
+button { padding:10px; margin:5px; cursor:pointer; }
+.post { background:#111; margin:10px; padding:10px; border-left:3px solid cyan; }
+.hidden { display:none; }
+img { border-radius:50%; }
+</style>
 </head>
+
 <body>
 
-    <div id="auth-ui" class="card">
-        <h2 style="letter-spacing: 5px; margin-bottom: 5px;">GHOSTNET</h2>
-        <div id="mesh-status" style="font-size: 9px; color: yellow; margin-bottom: 20px;">MESH: CONNECTING...</div>
-        
-        <input type="text" id="user" placeholder="USERNAME">
-        <input type="password" id="pass" placeholder="PASSPHRASE">
-        
-        <button class="btn-reg" onclick="handleAuth('create')">1. Create Identity</button>
-        <button class="btn-log" onclick="handleAuth('auth')">2. Access Mesh</button>
-        
-        <div id="console">System: Awaiting user input...</div>
-    </div>
+<div id="auth" class="card">
+<h2>👻 GhostNet v8</h2>
+<div id="status">MESH: CONNECTING...</div>
 
-    <div id="app" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3 id="alias-tag">@Citizen</h3>
-            <button onclick="location.reload()" style="width: auto; padding: 5px 10px; font-size: 10px; background: #300; color: white;">Logout</button>
-        </div>
-        
-        <div class="card" style="width: 100%; margin-bottom: 20px; box-sizing: border-box;">
-            <textarea id="msg" style="width:100%; height:60px; background:#000; color:white; border:1px solid #333; padding:10px;" placeholder="Broadcast to Web4..."></textarea>
-            <button class="btn-log" onclick="broadcast()">BROADCAST</button>
-        </div>
-        
-        <div id="feed"></div>
-    </div>
+<input id="user" placeholder="username">
+<input id="pass" type="password" placeholder="password">
+
+<button onclick="register()">Register</button>
+<button onclick="login()">Login</button>
+
+<div id="console"></div>
+</div>
+
+<div id="app" class="hidden">
+<h3 id="nickname"></h3>
+
+<div class="card">
+<input id="avatar" placeholder="Avatar Image URL">
+<input id="bio" placeholder="Bio">
+<button onclick="saveProfile()">Save Profile</button>
+</div>
+
+<div class="card">
+<textarea id="msg" placeholder="What's happening?"></textarea>
+<button onclick="post()">Post</button>
+</div>
+
+<div id="feed"></div>
+
+<button onclick="logout()">Logout</button>
+</div>
 
 <script>
-    // Use high-availability relays
-    const gun = Gun([
+// MULTI PEER
+const gun = Gun({
+    peers: [
         'https://gun-manhattan.herokuapp.com/gun',
-        'https://peer.wall.org/gun'
-    ]);
-    const user = gun.user();
+        'https://peer.wallie.io/gun',
+        'https://gun-us.herokuapp.com/gun'
+    ],
+    localStorage:true
+});
 
-    const log = (msg) => {
-        const c = document.getElementById('console');
-        c.innerHTML += `<br>> ${msg}`;
-        console.log(msg);
-    };
+const user = gun.user();
 
-    // Mesh Status Check
-    gun.on('hi', () => {
-        document.getElementById('mesh-status').innerText = "MESH: ONLINE (PEER FOUND)";
-        document.getElementById('mesh-status').style.color = "#00f3ff";
+const log = (m)=>document.getElementById('console').innerHTML += "<br>"+m;
+
+// PEER STATUS
+gun.on('hi', ()=> {
+    document.getElementById('status').innerText="MESH: ONLINE";
+});
+
+// REGISTER
+function register(){
+    user.create(userVal(), passVal(), ack=>{
+        if(ack.err){ alert(ack.err); log(ack.err); }
+        else alert("Account created. Now login.");
     });
+}
 
-    async function handleAuth(type) {
-        const u = document.getElementById('user').value;
-        const p = document.getElementById('pass').value;
+// LOGIN
+function login(){
+    user.auth(userVal(), passVal(), ack=>{
+        if(ack.err){ alert("Login Failed"); }
+        else startApp();
+    });
+}
 
-        if(!u || !p) return log("Error: Empty fields.");
+// START APP
+function startApp(){
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
 
-        if(type === 'create') {
-            log("Generating Keypair...");
-            user.create(u, p, (ack) => {
-                if(ack.err) {
-                    log("Reg Failed: " + ack.err);
-                    alert("Registration Error: " + ack.err);
-                } else {
-                    log("Identity created. Try Accessing now.");
-                    alert("Account Created! Now click 'Access Mesh'.");
-                }
-            });
-        } else {
-            log("Verifying Cryptography...");
-            // Force a 10s timeout to catch "hanging" logins
-            const timeout = setTimeout(() => {
-                log("Mesh Timeout. Check connection.");
-                alert("Mesh connection slow. Try again in 5 seconds.");
-            }, 10000);
+    loadProfile();
+    loadFeed();
+}
 
-            user.auth(u, p, (ack) => {
-                clearTimeout(timeout);
-                if(ack.err) {
-                    log("Auth Failed: " + ack.err);
-                    alert("Access Denied: Check username/password.");
-                } else {
-                    log("Handshake Success!");
-                    startApp();
-                }
-            });
-        }
-    }
+// PROFILE
+function saveProfile(){
+    gun.get('profiles').get(user.is.pub).put({
+        nickname:userVal(),
+        avatar:document.getElementById('avatar').value,
+        bio:document.getElementById('bio').value
+    });
+}
 
-    function startApp() {
-        document.getElementById('auth-ui').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
-        document.getElementById('alias-tag').innerText = "@" + user.is.alias;
-        
-        // Load Feed
-        gun.get('ghostnet_v7_feed').map().once((data, id) => {
-            if(!data || !data.msg) return;
-            const post = document.createElement('div');
-            post.className = 'post';
-            post.innerHTML = `<strong>@${data.user}</strong><br>${data.msg}`;
-            document.getElementById('feed').prepend(post);
+function loadProfile(){
+    gun.get('profiles').get(user.is.pub).on(data=>{
+        if(!data) return;
+        document.getElementById('nickname').innerText="@"+(data.nickname||"anon");
+    });
+}
+
+// POST
+function post(){
+    const id = Gun.text.random();
+    gun.get('posts').get(id).put({
+        id,
+        user:userVal(),
+        pub:user.is.pub,
+        msg:document.getElementById('msg').value,
+        time:Date.now()
+    });
+    document.getElementById('msg').value='';
+}
+
+// FEED
+function loadFeed(){
+    gun.get('posts').map().on((data,id)=>{
+        if(!data || document.getElementById(id)) return;
+
+        const div=document.createElement('div');
+        div.className='post';
+        div.id=id;
+
+        div.innerHTML=`
+        <b>@${data.user}</b>
+        <p>${data.msg}</p>
+        <button onclick="like('${id}')">👍</button>
+        <button onclick="share('${id}')">🔁</button>
+        <input id="c-${id}" placeholder="comment">
+        <button onclick="comment('${id}')">💬</button>
+        <div id="comments-${id}"></div>
+        `;
+
+        document.getElementById('feed').prepend(div);
+
+        // COMMENTS LOAD
+        gun.get('comments').get(id).map().on(c=>{
+            if(!c) return;
+            const el=document.createElement('div');
+            el.innerText = c.user + ": " + c.msg;
+            document.getElementById('comments-'+id).appendChild(el);
         });
-    }
+    });
+}
 
-    function broadcast() {
-        const txt = document.getElementById('msg').value;
-        if(!txt) return;
-        gun.get('ghostnet_v7_feed').set({
-            user: user.is.alias,
-            msg: txt,
-            time: Date.now()
-        });
-        document.getElementById('msg').value = '';
-    }
+// LIKE
+function like(id){
+    gun.get('likes').get(id).get(user.is.pub).put(true);
+}
 
-    // Auto-login logic
-    if(user.is) startApp();
+// COMMENT
+function comment(id){
+    const txt=document.getElementById('c-'+id).value;
+    gun.get('comments').get(id).set({
+        user:userVal(),
+        msg:txt,
+        time:Date.now()
+    });
+}
+
+// SHARE (REPOST)
+function share(id){
+    gun.get('posts').get(id).once(data=>{
+        postShared(data.msg);
+    });
+}
+
+function postShared(msg){
+    const id = Gun.text.random();
+    gun.get('posts').get(id).put({
+        user:userVal(),
+        msg:"🔁 "+msg,
+        time:Date.now()
+    });
+}
+
+// FOLLOW
+function follow(pub){
+    gun.get('follows').get(user.is.pub).get(pub).put(true);
+}
+
+// LOGOUT
+function logout(){
+    user.leave();
+    location.reload();
+}
+
+// HELPERS
+function userVal(){ return document.getElementById('user').value; }
+function passVal(){ return document.getElementById('pass').value; }
+
+// AUTO LOGIN
+gun.on('auth', ()=> startApp());
 
 </script>
+
 </body>
 </html>
